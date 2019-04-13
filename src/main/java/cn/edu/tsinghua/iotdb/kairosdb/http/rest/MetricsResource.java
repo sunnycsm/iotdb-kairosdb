@@ -92,7 +92,13 @@ public class MetricsResource {
 
       DataPointsParser parser = new DataPointsParser(
           new InputStreamReader(stream, StandardCharsets.UTF_8), gson);
+
+      long st = System.nanoTime();
       ValidationErrors validationErrors = parser.parse();
+      long elapse = System.nanoTime() - st;
+      logger.info("[ValidationErrors validationErrors = parser.parse()] execution time: {} ms",
+          String.format("%.2f", elapse / 1000000.0));
+
 
       m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
       m_ingestTime.addAndGet(parser.getIngestTime());
