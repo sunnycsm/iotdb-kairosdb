@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.kairosdb.http.rest.json;
 
+import cn.edu.tsinghua.iotdb.kairosdb.Main;
 import cn.edu.tsinghua.iotdb.kairosdb.dao.MetricsManager;
 import cn.edu.tsinghua.iotdb.kairosdb.util.Util;
 import cn.edu.tsinghua.iotdb.kairosdb.util.ValidationException;
@@ -16,10 +17,13 @@ import java.io.IOException;
 import java.io.Reader;
 import java.sql.SQLException;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class DataPointsParser {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DataPointsParser.class);
   private final Reader inputStream;
   private final Gson gson;
 
@@ -80,7 +84,12 @@ public class DataPointsParser {
   private NewMetric parseMetric(JsonReader reader) {
     NewMetric metric;
     try {
+      long st = System.nanoTime();
       metric = gson.fromJson(reader, NewMetric.class);
+      long elapse = System.nanoTime() - st;
+      LOGGER.info("[metric = gson.fromJson(reader, NewMetric.class)] execution time: {} ms",
+          String.format("%.2f", elapse / 1000000.0));
+
     } catch (IllegalArgumentException e) {
       // Happens when parsing data points where one of the pair is missing (timestamp or value)
       throw new JsonSyntaxException("Invalid JSON");

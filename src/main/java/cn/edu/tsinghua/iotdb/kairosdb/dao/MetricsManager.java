@@ -158,7 +158,12 @@ public class MetricsManager {
       return validationErrors;
     }
 
+    long st = System.nanoTime();
     HashMap<Integer, String> orderTagKeyMap = getMapping(name, tags);
+    long elapse = System.nanoTime() - st;
+    LOGGER.info("[HashMap<Integer, String> orderTagKeyMap = getMapping(name, tags)] execution time: {} ms",
+        String.format("%.2f", elapse / 1000000.0));
+
     Map<String, Integer> metricTags = tagOrder.get(name);
 
     if (type.equals("string")) {
