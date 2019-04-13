@@ -82,6 +82,9 @@ public class MetricsResource {
   @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
   @Path("/datapoints")
   public Response add(@Context HttpHeaders httpheaders, InputStream stream) {
+    long start = System.nanoTime();
+    long st;
+    long elapse;
     try {
       if (httpheaders != null) {
         List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
@@ -90,18 +93,26 @@ public class MetricsResource {
         }
       }
 
+      st = System.nanoTime();
       DataPointsParser parser = new DataPointsParser(
           new InputStreamReader(stream, StandardCharsets.UTF_8), gson);
+      elapse = System.nanoTime() - st;
+      logger.info("[DataPointsParser parser = new DataPointsParser] execution time: {} ms",
+          String.format("%.2f", elapse / 1000000.0));
 
-      long st = System.nanoTime();
+      st = System.nanoTime();
       ValidationErrors validationErrors = parser.parse();
-      long elapse = System.nanoTime() - st;
+      elapse = System.nanoTime() - st;
       logger.info("[ValidationErrors validationErrors = parser.parse()] execution time: {} ms",
           String.format("%.2f", elapse / 1000000.0));
 
 
       m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
       m_ingestTime.addAndGet(parser.getIngestTime());
+
+      long ela = System.nanoTime() - start;
+      logger.info("Response total time: {} ms",
+          String.format("%.2f", ela / 1000000.0));
 
       if (!validationErrors.hasErrors()) {
         return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
@@ -125,6 +136,7 @@ public class MetricsResource {
       return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(new ErrorResponse(e.getMessage()))).build();
     }
+
   }
 
   @POST
