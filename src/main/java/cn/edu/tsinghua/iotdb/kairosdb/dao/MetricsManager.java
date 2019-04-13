@@ -189,9 +189,10 @@ public class MetricsManager {
     String insertingSql = String
         .format("insert into root.%s%s(timestamp,%s) values(%s,%s);", getStorageGroupName(name),
             pathBuilder.toString(), name, timestamp, value);
-
+    st = System.nanoTime();
     PreparedStatement pst = null;
     try {
+
       pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
       pst.executeUpdate();
     } catch (IoTDBSQLException e) {
@@ -212,6 +213,9 @@ public class MetricsManager {
     } finally {
       close(pst);
     }
+    elapse = System.nanoTime() - st;
+    System.out.print("[pst.executeUpdate()] execution time: ");
+    System.out.println(String.format("%.4f", elapse / 1000000.0) + " ms");
     return null;
   }
 
