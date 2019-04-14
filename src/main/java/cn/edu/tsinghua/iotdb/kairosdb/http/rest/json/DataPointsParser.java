@@ -89,6 +89,8 @@ public class DataPointsParser {
   }
 
   private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) {
+    long start = System.nanoTime();
+    long st1 = System.nanoTime();
     ValidationErrors validationErrors = new ValidationErrors();
     Context context = new Context(count);
 
@@ -128,18 +130,23 @@ public class DataPointsParser {
         }
       }
     }
+    long en1 = System.nanoTime();
+    System.out.println("DataPointsParser line 93~132 execute time: "+String.format("%.4f", (en1 - st1) / 1000000.0) + " ms");
 
     if (!validationErrors.hasErrors()) {
+      long st2 = System.nanoTime();
       ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
+      long en2 = System.nanoTime();
+      System.out.println("DataPointsParser line 138 execute time: "+String.format("%.4f", (en2 - st2) / 1000000.0) + " ms");
 
       if (metric.getTimestamp() != null && metric.getValue() != null) {
+        long st3 = System.nanoTime();
         String type = null;
         try {
           type = findType(metric.getValue());
         } catch (ValidationException e) {
           validationErrors.addErrorMessage(context + " " + e.getMessage());
         }
-
         try {
           ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, metric.getTimestamp(),
               metric.getValue().getAsString());
@@ -149,9 +156,13 @@ public class DataPointsParser {
         } catch (SQLException e) {
           validationErrors.addErrorMessage(context + " " + e.getMessage());
         }
+        long en3 = System.nanoTime();
+        System.out.println("DataPointsParser line 143~158 execute time: "+String.format("%.4f", (en3 - st3) / 1000000.0) + " ms");
+
       }
 
       if (metric.getDatapoints() != null && metric.getDatapoints().length > 0) {
+        long st4 = System.nanoTime();
         int contextCount = 0;
         SubContext dataPointContext = new SubContext(context, "datapoints");
         for (JsonElement[] dataPoint : metric.getDatapoints()) {
@@ -195,10 +206,15 @@ public class DataPointsParser {
                 continue;
               }
             }
+            long en4 = System.nanoTime();
+            System.out.println("DataPointsParser line 165~209 execute time: "+String.format("%.4f", (en4 - st4) / 1000000.0) + " ms");
 
             try {
+              long st = System.nanoTime();
               ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, timestamp,
                   dataPoint[1].getAsString());
+              long en = System.nanoTime();
+              System.out.println("DataPointsParser line 214 execute time: "+String.format("%.4f", (en - st) / 1000000.0) + " ms");
               if (null != tErrors) {
                 validationErrors.add(tErrors);
               }
@@ -214,7 +230,8 @@ public class DataPointsParser {
     }
 
     errors.add(validationErrors);
-
+    long end = System.nanoTime();
+    System.out.println("DataPointsParser line 92~233 execute time: "+String.format("%.4f", (end - start) / 1000000.0) + " ms");
     return !validationErrors.hasErrors();
   }
 
