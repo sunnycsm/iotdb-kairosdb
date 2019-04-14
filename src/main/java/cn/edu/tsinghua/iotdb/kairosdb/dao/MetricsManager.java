@@ -38,6 +38,7 @@ public class MetricsManager {
   // Storage group relevant config
   private static int storageGroupSize = config.STORAGE_GROUP_SIZE;
   private static final String STORAGE_GROUP_PREFIX = "group_";
+  public static double totalInsertTime = 0;
 
   private MetricsManager() {
   }
@@ -214,8 +215,11 @@ public class MetricsManager {
       close(pst);
     }
     elapse = System.nanoTime() - st;
+    totalInsertTime += elapse;
     System.out.print("[pst.executeUpdate()] execution time: ");
     System.out.println(String.format("%.4f", elapse / 1000000.0) + " ms");
+    System.out.print("totalInsertTime : ");
+    System.out.println(String.format("%.4f", totalInsertTime / 1000000.0) + " ms");
     return null;
   }
 
