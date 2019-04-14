@@ -86,37 +86,30 @@ public class MetricsResource {
     long st;
     long elapse;
     try {
-      st = System.nanoTime();
       if (httpheaders != null) {
         List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
         if (requestHeader != null && requestHeader.contains("gzip")) {
           stream = new GZIPInputStream(stream);
         }
       }
-      elapse = System.nanoTime() - st;
-      logger.info("[httpheaders.getRequestHeader] execution time: {} ms",
-          String.format("%.2f", elapse / 1000000.0));
-
       DataPointsParser parser = new DataPointsParser(
           new InputStreamReader(stream, StandardCharsets.UTF_8), gson);
-
 
       st = System.nanoTime();
       ValidationErrors validationErrors = parser.parse();
       elapse = System.nanoTime() - st;
+      st = System.nanoTime();
       logger.info("[ValidationErrors validationErrors = parser.parse()] execution time: {} ms",
           String.format("%.2f", elapse / 1000000.0));
-
-
-      st = System.nanoTime();
-      m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
-      m_ingestTime.addAndGet(parser.getIngestTime());
       elapse = System.nanoTime() - st;
-      logger.info("[m_ingestedDataPoints.addAndGet] execution time: {} ms",
+      logger.info("[LOGGER] execution time: {} ms",
           String.format("%.2f", elapse / 1000000.0));
 
+      m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
+      m_ingestTime.addAndGet(parser.getIngestTime());
+
       long ela = System.nanoTime() - start;
-      logger.info("Response total time: {} ms",
+      logger.info("[Response total time]: {} ms",
           String.format("%.2f", ela / 1000000.0));
 
       if (!validationErrors.hasErrors()) {
