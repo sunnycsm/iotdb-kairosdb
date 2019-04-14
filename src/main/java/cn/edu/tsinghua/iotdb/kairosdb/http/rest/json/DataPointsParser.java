@@ -89,6 +89,7 @@ public class DataPointsParser {
   }
 
   private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) {
+    System.out.println("_____________start______________");
     long start = System.nanoTime();
     long st1 = System.nanoTime();
     ValidationErrors validationErrors = new ValidationErrors();
@@ -148,8 +149,11 @@ public class DataPointsParser {
           validationErrors.addErrorMessage(context + " " + e.getMessage());
         }
         try {
+          long st6 = System.nanoTime();
           ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, metric.getTimestamp(),
               metric.getValue().getAsString());
+          long en6 = System.nanoTime();
+          System.out.println("DataPointsParser line 152 execute time: "+String.format("%.4f", (en6 - st6) / 1000000.0) + " ms");
           if (null != tErrors) {
             validationErrors.add(tErrors);
           }
@@ -157,7 +161,7 @@ public class DataPointsParser {
           validationErrors.addErrorMessage(context + " " + e.getMessage());
         }
         long en3 = System.nanoTime();
-        System.out.println("DataPointsParser line 143~158 execute time: "+String.format("%.4f", (en3 - st3) / 1000000.0) + " ms");
+        System.out.println("DataPointsParser line 143~160 execute time: "+String.format("%.4f", (en3 - st3) / 1000000.0) + " ms");
 
       }
 
@@ -207,14 +211,14 @@ public class DataPointsParser {
               }
             }
             long en4 = System.nanoTime();
-            System.out.println("DataPointsParser line 165~209 execute time: "+String.format("%.4f", (en4 - st4) / 1000000.0) + " ms");
+            System.out.println("DataPointsParser line 167~210 execute time: "+String.format("%.4f", (en4 - st4) / 1000000.0) + " ms");
 
             try {
               long st = System.nanoTime();
               ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, timestamp,
                   dataPoint[1].getAsString());
               long en = System.nanoTime();
-              System.out.println("DataPointsParser line 214 execute time: "+String.format("%.4f", (en - st) / 1000000.0) + " ms");
+              System.out.println("DataPointsParser line 217 execute time: "+String.format("%.4f", (en - st) / 1000000.0) + " ms");
               if (null != tErrors) {
                 validationErrors.add(tErrors);
               }
@@ -232,6 +236,7 @@ public class DataPointsParser {
     errors.add(validationErrors);
     long end = System.nanoTime();
     System.out.println("DataPointsParser line 92~233 execute time: "+String.format("%.4f", (end - start) / 1000000.0) + " ms");
+    System.out.println("_____________end______________");
     return !validationErrors.hasErrors();
   }
 
