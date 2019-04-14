@@ -149,7 +149,7 @@ public class MetricsManager {
    * @return Null if the datapoint has been correctly insert, otherwise, the errors in ValidationErrors
    * @throws SQLException The SQLException will be thrown when unexpected error occurs
    */
-  public static ValidationErrors addDatapoint(String name, ImmutableSortedMap<String, String> tags,
+  public static ValidationErrors addDatapoint(String name, Map<String, String> tags,
       String type, Long timestamp, String value) throws SQLException {
     ValidationErrors validationErrors = new ValidationErrors();
     if (null == tags) {
