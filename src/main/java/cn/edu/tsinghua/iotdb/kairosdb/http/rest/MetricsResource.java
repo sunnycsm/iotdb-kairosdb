@@ -86,19 +86,20 @@ public class MetricsResource {
     long st;
     long elapse;
     try {
+      st = System.nanoTime();
       if (httpheaders != null) {
         List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
         if (requestHeader != null && requestHeader.contains("gzip")) {
           stream = new GZIPInputStream(stream);
         }
       }
+      elapse = System.nanoTime() - st;
+      logger.info("[httpheaders.getRequestHeader] execution time: {} ms",
+          String.format("%.2f", elapse / 1000000.0));
 
-      st = System.nanoTime();
       DataPointsParser parser = new DataPointsParser(
           new InputStreamReader(stream, StandardCharsets.UTF_8), gson);
-      elapse = System.nanoTime() - st;
-      logger.info("[DataPointsParser parser = new DataPointsParser] execution time: {} ms",
-          String.format("%.2f", elapse / 1000000.0));
+
 
       st = System.nanoTime();
       ValidationErrors validationErrors = parser.parse();
@@ -107,8 +108,12 @@ public class MetricsResource {
           String.format("%.2f", elapse / 1000000.0));
 
 
+      st = System.nanoTime();
       m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
       m_ingestTime.addAndGet(parser.getIngestTime());
+      elapse = System.nanoTime() - st;
+      logger.info("[m_ingestedDataPoints.addAndGet] execution time: {} ms",
+          String.format("%.2f", elapse / 1000000.0));
 
       long ela = System.nanoTime() - start;
       logger.info("Response total time: {} ms",
