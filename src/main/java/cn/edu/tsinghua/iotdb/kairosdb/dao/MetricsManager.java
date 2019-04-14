@@ -195,12 +195,24 @@ public class MetricsManager {
 
     try (Statement statement = IoTDBUtil.getConnection().createStatement()){
       try {
+        long st1 = System.nanoTime();
         statement.execute(insertingSql);
+        long elapse1 = System.nanoTime() - st1;
+        long st2 = System.nanoTime();
+        System.out.print("[statement.execute(insertingSql)] execution time: ");
+        System.out.println(String.format("%.4f", elapse1 / 1000000.0) + " ms");
+        long elapse2 = System.nanoTime() - st2;
+        System.out.print("[println(execute(insertingSql))] execution time: ");
+        System.out.println(String.format("%.4f", elapse2 / 1000000.0) + " ms");
       } catch (IoTDBSQLException e) {
         try {
+          long st3 = System.nanoTime();
           createNewMetric(name, pathBuilder.toString(), type);
           LOGGER.info("TIMESERIES(root{}.{}) has been created.", pathBuilder, name);
           statement.execute(insertingSql);
+          long elapse3 = System.nanoTime() - st3;
+          System.out.print("[createNewMetric and execute] execution time: ");
+          System.out.println(String.format("%.4f", elapse3 / 1000000.0) + " ms");
         } catch (IoTDBSQLException e1) {
           validationErrors.addErrorMessage(
               String.format(ERROR_OUTPUT_FORMATTER, e1.getClass().getName(), e1.getMessage()));
@@ -214,7 +226,7 @@ public class MetricsManager {
     }
     elapse = System.nanoTime() - st;
     totalInsertTime += elapse;
-    System.out.print("[pst.executeUpdate()] execution time: ");
+    System.out.print("[Insert of addDatapoint] execution time: ");
     System.out.println(String.format("%.4f", elapse / 1000000.0) + " ms");
     System.out.print("[totalInsertTime time]: ");
     System.out.println(String.format("%.4f", totalInsertTime / 1000000.0) + " ms");
