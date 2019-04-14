@@ -195,7 +195,11 @@ public class MetricsManager {
     try {
 
       pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
+      long st2 = System.nanoTime();
       pst.executeUpdate();
+      long elapse2 = System.nanoTime() - st2;
+      System.out.println("[pst.executeUpdate()] execution time: {} ms" + String.format("%.2f", elapse2 / 1000000.0));
+
     } catch (IoTDBSQLException e) {
       try {
         createNewMetric(name, pathBuilder.toString(), type);

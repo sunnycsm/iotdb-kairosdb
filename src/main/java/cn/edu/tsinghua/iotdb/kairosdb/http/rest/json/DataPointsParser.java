@@ -150,8 +150,12 @@ public class DataPointsParser {
         }
 
         try {
+          long st = System.nanoTime();
           ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, metric.getTimestamp(),
               metric.getValue().getAsString());
+          long elapse = System.nanoTime() - st;
+          System.out.println("[MetricsManager.addDatapoint1] execution time: {} ms" + String.format("%.2f", elapse / 1000000.0));
+
           if (null != tErrors) {
             validationErrors.add(tErrors);
           }
@@ -206,8 +210,12 @@ public class DataPointsParser {
             }
 
             try {
+              long st1 = System.nanoTime();
               ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, timestamp,
                   dataPoint[1].getAsString());
+              long elapse1 = System.nanoTime() - st1;
+              System.out.println("[MetricsManager.addDatapoint2] execution time: {} ms" + String.format("%.2f", elapse1 / 1000000.0));
+
               if (null != tErrors) {
                 validationErrors.add(tErrors);
               }
