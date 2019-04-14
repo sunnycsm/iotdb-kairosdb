@@ -38,6 +38,7 @@ public class MetricsManager {
   // Storage group relevant config
   private static int storageGroupSize = config.STORAGE_GROUP_SIZE;
   private static final String STORAGE_GROUP_PREFIX = "group_";
+  public static double totalInsertTime = 0;
 
   private MetricsManager() {
   }
@@ -189,33 +190,34 @@ public class MetricsManager {
     String insertingSql = String
         .format("insert into root.%s%s(timestamp,%s) values(%s,%s);", getStorageGroupName(name),
             pathBuilder.toString(), name, timestamp, value);
-    st = System.nanoTime();
-    PreparedStatement pst = null;
-    try {
 
-      pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
-      pst.executeUpdate();
-    } catch (IoTDBSQLException e) {
+    st = System.nanoTime();
+
+    try (Statement statement = IoTDBUtil.getConnection().createStatement()){
       try {
-        createNewMetric(name, pathBuilder.toString(), type);
-        LOGGER.info("TIMESERIES(root{}.{}) has been created.", pathBuilder, name);
-        pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
-        pst.executeUpdate();
-      } catch (IoTDBSQLException e1) {
+        statement.execute(insertingSql);
+      } catch (IoTDBSQLException e) {
+        try {
+          createNewMetric(name, pathBuilder.toString(), type);
+          LOGGER.info("TIMESERIES(root{}.{}) has been created.", pathBuilder, name);
+          statement.execute(insertingSql);
+        } catch (IoTDBSQLException e1) {
+          validationErrors.addErrorMessage(
+              String.format(ERROR_OUTPUT_FORMATTER, e1.getClass().getName(), e1.getMessage()));
+          return validationErrors;
+        }
+      } catch (SQLException e) {
         validationErrors.addErrorMessage(
-            String.format(ERROR_OUTPUT_FORMATTER, e1.getClass().getName(), e1.getMessage()));
+            String.format(ERROR_OUTPUT_FORMATTER, e.getClass().getName(), e.getMessage()));
         return validationErrors;
       }
-    } catch (SQLException e) {
-      validationErrors.addErrorMessage(
-          String.format(ERROR_OUTPUT_FORMATTER, e.getClass().getName(), e.getMessage()));
-      return validationErrors;
-    } finally {
-      close(pst);
     }
     elapse = System.nanoTime() - st;
+    totalInsertTime += elapse;
     System.out.print("[pst.executeUpdate()] execution time: ");
     System.out.println(String.format("%.4f", elapse / 1000000.0) + " ms");
+    System.out.print("[totalInsertTime time]: ");
+    System.out.println(String.format("%.4f", totalInsertTime / 1000000.0) + " ms");
     return null;
   }
 
