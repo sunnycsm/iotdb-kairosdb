@@ -19,16 +19,18 @@ public class WriteService {
 
   public void stop() {
     stop = true;
-    try {
-      statement.executeBatch();
-      statement.clearBatch();
-    } catch (SQLException e) {
-      LOGGER.error("Last batch insert failed because  ", e);
-    } finally {
+    if (statement != null) {
       try {
-        statement.close();
+        statement.executeBatch();
+        statement.clearBatch();
       } catch (SQLException e) {
-        LOGGER.error("Close statement failed because  ", e);
+        LOGGER.error("Last batch insert failed because  ", e);
+      } finally {
+        try {
+          statement.close();
+        } catch (SQLException e) {
+          LOGGER.error("Close statement failed because  ", e);
+        }
       }
     }
   }
@@ -41,6 +43,28 @@ public class WriteService {
     }
   }
 
+  public void addDataPoint(String sql) {
+    if (statement == null) {
+      try {
+        statement = IoTDBUtil.getConnection().createStatement();
+        try {
+          statement.addBatch(sql);
+        } catch (SQLException e) {
+          LOGGER.error("Add SQL to batch failed because ", e);
+        }
+      } catch (Exception e) {
+        LOGGER.error("create statement failed because ", e);
+      }
+    } else {
+      try {
+        statement.addBatch(sql);
+      } catch (SQLException e) {
+        LOGGER.error("Add SQL to batch failed because ", e);
+      }
+    }
+
+  }
+
   public static WriteService getInstance() {
     return WriteServiceHolder.INSTANCE;
   }
@@ -48,10 +72,6 @@ public class WriteService {
   private static class WriteServiceHolder {
 
     private static final WriteService INSTANCE = new WriteService();
-  }
-
-  public Statement getStatement() {
-    return statement;
   }
 
   public void activate() {
@@ -67,11 +87,11 @@ public class WriteService {
         try {
           long currentTimeMillis = System.currentTimeMillis();
           long time = currentTimeMillis - runningTimeMillis;
-          if (time >= config.SEND_FREQ) {
-            LOGGER.info("Write a batch ");
+          if (time >= config.SEND_FREQ && statement != null) {
             runningTimeMillis = currentTimeMillis;
             statement.executeBatch();
             statement.clearBatch();
+            statement.close();
           }
         } catch (Exception e) {
           LOGGER.error("Write batch failed because  ", e);

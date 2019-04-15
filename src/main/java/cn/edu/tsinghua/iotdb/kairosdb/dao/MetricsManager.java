@@ -187,8 +187,7 @@ public class MetricsManager {
             pathBuilder.toString(), name, timestamp, value);
 
     try {
-      WriteService writeService = WriteService.getInstance();
-      writeService.getStatement().addBatch(insertingSql);
+      WriteService.getInstance().addDataPoint(insertingSql);
     } catch (Exception e) {
       validationErrors.addErrorMessage(
           String.format(ERROR_OUTPUT_FORMATTER, e.getClass().getName(), e.getMessage()));
