@@ -15,6 +15,7 @@ public class WriteService {
   private static final Config config = ConfigDescriptor.getInstance().getConfig();
   private long runningTimeMillis = System.currentTimeMillis();
   private boolean stop = false;
+  private Statement statement;
 
   public void stop() {
     stop = true;
@@ -53,8 +54,6 @@ public class WriteService {
     return statement;
   }
 
-  private Statement statement;
-
   public void activate() {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     executorService.submit(new StatBackLoop());
@@ -69,6 +68,7 @@ public class WriteService {
           long currentTimeMillis = System.currentTimeMillis();
           long seconds = (currentTimeMillis - runningTimeMillis) / 1000;
           if (seconds >= config.SEND_FREQ) {
+            LOGGER.info("Write a batch ");
             runningTimeMillis = currentTimeMillis;
             statement.executeBatch();
             statement.clearBatch();
