@@ -185,16 +185,15 @@ public class MetricsManager {
         .format("insert into root.%s%s(timestamp,%s) values(%s,%s);", getStorageGroupName(name),
             pathBuilder.toString(), name, timestamp, value);
 
-    PreparedStatement pst = null;
     try {
-      pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
-      pst.executeUpdate();
+      WriteService writeService = WriteService.getInstance();
+      writeService.getStatement().addBatch(insertingSql);
     } catch (IoTDBSQLException e) {
       try {
         createNewMetric(name, pathBuilder.toString(), type);
         LOGGER.info("TIMESERIES(root{}.{}) has been created.", pathBuilder, name);
-        pst = IoTDBUtil.getPreparedStatement(insertingSql, null);
-        pst.executeUpdate();
+        WriteService writeService = WriteService.getInstance();
+        writeService.getStatement().addBatch(insertingSql);
       } catch (IoTDBSQLException e1) {
         validationErrors.addErrorMessage(
             String.format(ERROR_OUTPUT_FORMATTER, e1.getClass().getName(), e1.getMessage()));
@@ -204,8 +203,6 @@ public class MetricsManager {
       validationErrors.addErrorMessage(
           String.format(ERROR_OUTPUT_FORMATTER, e.getClass().getName(), e.getMessage()));
       return validationErrors;
-    } finally {
-      close(pst);
     }
     return null;
   }

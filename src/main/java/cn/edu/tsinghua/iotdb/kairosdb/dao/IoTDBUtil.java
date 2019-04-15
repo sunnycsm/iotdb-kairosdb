@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,12 @@ public class IoTDBUtil {
   private static final String URL = "jdbc:iotdb://%s:%s/";
 
   private static Connection connection;
+
+  public Statement getStatement() {
+    return statement;
+  }
+
+  private Statement statement;
 
   private IoTDBUtil() {
   }
@@ -36,18 +43,6 @@ public class IoTDBUtil {
     } catch (SQLException e) {
       LOGGER.error(e.getMessage());
     }
-  }
-
-  static PreparedStatement getPreparedStatement(String sql, Object[] params) throws SQLException {
-    PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-    if (params != null) {
-      for (int i = 0; i < params.length; i++) {
-        preparedStatement.setObject(i + 1, params[i]);
-      }
-    }
-
-    return preparedStatement;
   }
 
 }

@@ -6,7 +6,7 @@ public class Config {
   public String PORT = "6667";
   public int STORAGE_GROUP_SIZE = 50;
   public String REST_PORT = "6666";
-
+  public long SEND_FREQ = 1000;
   Config() {
 
   }
