@@ -135,6 +135,7 @@ public class MetricsManager {
           .format("CREATE TIMESERIES root.%s%s.%s WITH DATATYPE=%s, ENCODING=%s, COMPRESSOR=SNAPPY",
               getStorageGroupName(metricName), path, metricName, datatype, encoding));
     }
+    LOGGER.info("TIMESERIES(root{}.{}) has been created.", path, metricName);
   }
 
   /**
@@ -158,7 +159,7 @@ public class MetricsManager {
       return validationErrors;
     }
 
-    HashMap<Integer, String> orderTagKeyMap = getMapping(name, tags);
+    HashMap<Integer, String> orderTagKeyMap = getMapping(name, tags, type);
     Map<String, Integer> metricTags = tagOrder.get(name);
 
     if (type.equals("string")) {
@@ -188,18 +189,7 @@ public class MetricsManager {
     try {
       WriteService writeService = WriteService.getInstance();
       writeService.getStatement().addBatch(insertingSql);
-    } catch (IoTDBSQLException e) {
-      try {
-        createNewMetric(name, pathBuilder.toString(), type);
-        LOGGER.info("TIMESERIES(root{}.{}) has been created.", pathBuilder, name);
-        WriteService writeService = WriteService.getInstance();
-        writeService.getStatement().addBatch(insertingSql);
-      } catch (IoTDBSQLException e1) {
-        validationErrors.addErrorMessage(
-            String.format(ERROR_OUTPUT_FORMATTER, e1.getClass().getName(), e1.getMessage()));
-        return validationErrors;
-      }
-    } catch (SQLException e) {
+    } catch (Exception e) {
       validationErrors.addErrorMessage(
           String.format(ERROR_OUTPUT_FORMATTER, e.getClass().getName(), e.getMessage()));
       return validationErrors;
@@ -214,7 +204,7 @@ public class MetricsManager {
    * @param tags The tags will be computed
    * @return The mapping rule from position to tag_key
    */
-  private static HashMap<Integer, String> getMapping(String name, Map<String, String> tags) {
+  private static HashMap<Integer, String> getMapping(String name, Map<String, String> tags, String type) {
     Map<String, Integer> tagKeyOrderMap = tagOrder.get(name);
     HashMap<Integer, String> mapping = new HashMap<>();
     HashMap<String, Integer> cache = new HashMap<>();
@@ -230,17 +220,61 @@ public class MetricsManager {
       }
       tagOrder.put(name, tagKeyOrderMap);
       persistMappingCache(name, cache);
+
+      StringBuilder pathBuilder = new StringBuilder();
+      int i = 0;
+      while (i < tags.size()) {
+        String path = tags.get(mapping.get(i));
+        pathBuilder.append(".");
+        if (null == path) {
+          pathBuilder.append("d");
+        } else {
+          pathBuilder.append(path);
+        }
+        i++;
+      }
+      try {
+        createNewMetric(name, pathBuilder.toString(), type);
+      } catch (SQLException e) {
+        LOGGER.error("Create New Metric failed because ", e);
+      }
+
     } else {
       // The metric name exists
+      boolean hasNewTag = false;
       for (Map.Entry<String, String> tag : tags.entrySet()) {
         Integer pos = tagKeyOrderMap.get(tag.getKey());
         if (null == pos) {
+          hasNewTag = true;
           pos = tagKeyOrderMap.size();
           tagKeyOrderMap.put(tag.getKey(), pos);
           cache.put(tag.getKey(), pos);
           persistMappingCache(name, cache);
+
         }
         mapping.put(pos, tag.getKey());
+      }
+      if(hasNewTag){
+        // Generate the path
+        StringBuilder pathBuilder = new StringBuilder();
+        int i = 0;
+        int counter = 0;
+        while (i < tagOrder.get(name).size() && counter < tags.size()) {
+          String path = tags.get(mapping.get(i));
+          pathBuilder.append(".");
+          if (null == path) {
+            pathBuilder.append("d");
+          } else {
+            pathBuilder.append(path);
+            counter++;
+          }
+          i++;
+        }
+        try {
+          createNewMetric(name, pathBuilder.toString(), type);
+        } catch (SQLException e) {
+          LOGGER.error("Create New Metric failed because ", e);
+        }
       }
     }
     return mapping;

@@ -66,8 +66,8 @@ public class WriteService {
       while (!stop) {
         try {
           long currentTimeMillis = System.currentTimeMillis();
-          long seconds = (currentTimeMillis - runningTimeMillis) / 1000;
-          if (seconds >= config.SEND_FREQ) {
+          long time = currentTimeMillis - runningTimeMillis;
+          if (time >= config.SEND_FREQ) {
             LOGGER.info("Write a batch ");
             runningTimeMillis = currentTimeMillis;
             statement.executeBatch();
