@@ -46,6 +46,7 @@ public class WriteService {
   }
 
   public void addDataPoint(String sql) {
+    rwl.readLock().lock();
     if (statement == null) {
       try {
         statement = IoTDBUtil.getConnection().createStatement();
@@ -64,7 +65,7 @@ public class WriteService {
         LOGGER.error("Add SQL to batch failed because ", e);
       }
     }
-
+    rwl.readLock().lock();
   }
 
   public static WriteService getInstance() {
