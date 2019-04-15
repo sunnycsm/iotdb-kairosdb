@@ -84,18 +84,22 @@ public class WriteService {
     @Override
     public void run() {
       while (!stop) {
-        try {
-          long currentTimeMillis = System.currentTimeMillis();
-          long time = currentTimeMillis - runningTimeMillis;
-          if (time >= config.SEND_FREQ && statement != null) {
-            runningTimeMillis = currentTimeMillis;
-            statement.executeBatch();
-            statement.clearBatch();
-            statement.close();
+
+          try {
+            long currentTimeMillis = System.currentTimeMillis();
+            long time = currentTimeMillis - runningTimeMillis;
+            if (time >= config.SEND_FREQ && statement != null) {
+              synchronized (statement) {
+                runningTimeMillis = currentTimeMillis;
+                statement.executeBatch();
+                statement.clearBatch();
+                statement.close();
+              }
+            }
+          } catch (Exception e) {
+            LOGGER.error("Write batch failed because  ", e);
           }
-        } catch (Exception e) {
-          LOGGER.error("Write batch failed because  ", e);
-        }
+
       }
     }
   }
