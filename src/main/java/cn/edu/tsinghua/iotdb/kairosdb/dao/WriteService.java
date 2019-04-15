@@ -65,7 +65,7 @@ public class WriteService {
         LOGGER.error("Add SQL to batch failed because ", e);
       }
     }
-    rwl.readLock().lock();
+    rwl.readLock().unlock();
   }
 
   public static WriteService getInstance() {
