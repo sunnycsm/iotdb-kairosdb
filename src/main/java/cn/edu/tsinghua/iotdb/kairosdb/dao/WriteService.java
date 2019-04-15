@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,7 @@ public class WriteService {
   private long runningTimeMillis = System.currentTimeMillis();
   private boolean stop = false;
   private Statement statement;
+  private ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
   public void stop() {
     stop = true;
@@ -85,20 +87,22 @@ public class WriteService {
     public void run() {
       while (!stop) {
 
+        long currentTimeMillis = System.currentTimeMillis();
+        long time = currentTimeMillis - runningTimeMillis;
+        if (time >= config.SEND_FREQ && statement != null) {
+          runningTimeMillis = currentTimeMillis;
+          rwl.readLock().lock();
           try {
-            long currentTimeMillis = System.currentTimeMillis();
-            long time = currentTimeMillis - runningTimeMillis;
-            if (time >= config.SEND_FREQ && statement != null) {
-              synchronized (statement) {
-                runningTimeMillis = currentTimeMillis;
-                statement.executeBatch();
-                statement.clearBatch();
-                statement.close();
-              }
-            }
+            statement.executeBatch();
+            statement.clearBatch();
+            statement.close();
           } catch (Exception e) {
             LOGGER.error("Write batch failed because  ", e);
+          } finally {
+            rwl.readLock().unlock();
           }
+        }
+
 
       }
     }
