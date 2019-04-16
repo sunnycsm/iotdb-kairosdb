@@ -25,7 +25,7 @@ public class DataPointsParser {
   private static final Logger LOGGER = LoggerFactory.getLogger(DataPointsParser.class);
   private final Reader inputStream;
   private final Gson gson;
-
+  private static double totalTime = 0;
   private int ingestTime;
   private int dataPointCount;
 
@@ -154,7 +154,9 @@ public class DataPointsParser {
           ValidationErrors tErrors = MetricsManager.addDatapoint(metric.getName(), tags, type, metric.getTimestamp(),
               metric.getValue().getAsString());
           long elapse = System.nanoTime() - st;
+          totalTime += elapse / 1000000.0;
           System.out.println("[MetricsManager.addDatapoint1] execution time: {} ms" + String.format("%.2f", elapse / 1000000.0));
+          System.out.println("MetricsManager.addDatapoint totalTime: {} ms" + String.format("%.4f", totalTime));
 
           if (null != tErrors) {
             validationErrors.add(tErrors);
