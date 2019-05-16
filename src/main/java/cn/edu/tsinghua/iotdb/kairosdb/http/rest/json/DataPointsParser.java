@@ -87,23 +87,25 @@ public class DataPointsParser {
     //LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
 
     //start = System.currentTimeMillis();
-    try {
-      sendMetricsData();
-    } catch (SQLException e) {
-      try {
-        createTimeSeries();
-        sendMetricsData();
-      } catch (SQLException ex) {
-        try {
-          sendMetricsData();
-        } catch (SQLException exc) {
-          LOGGER.error("Exception occur:", exc);
-        }
-        LOGGER.error("Exception occur:", ex);
-        validationErrors.addErrorMessage(
-            String.format("%s: %s", ex.getClass().getName(), ex.getMessage()));
-      }
-    }
+
+//    try {
+//      sendMetricsData();
+//    } catch (SQLException e) {
+//      try {
+//        createTimeSeries();
+//        sendMetricsData();
+//      } catch (SQLException ex) {
+//        try {
+//          sendMetricsData();
+//        } catch (SQLException exc) {
+//          LOGGER.error("Exception occur:", exc);
+//        }
+//        LOGGER.error("Exception occur:", ex);
+//        validationErrors.addErrorMessage(
+//            String.format("%s: %s", ex.getClass().getName(), ex.getMessage()));
+//      }
+//    }
+
     //long elapse = System.currentTimeMillis() - start;
     //LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
 
