@@ -97,7 +97,9 @@ public class MetricsResource {
     new Thread(new Runnable() {
       @Override
       public void run() {
-        asyncResponse.resume(veryExpensiveOperation());
+        //asyncResponse.resume(veryExpensiveOperation());
+        asyncResponse.resume(setHeaders(Response.status(Response.Status.NO_CONTENT)).build());
+
       }
 
       private Response veryExpensiveOperation() {
