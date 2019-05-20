@@ -47,6 +47,7 @@ public class ConfigDescriptor {
         config.STORAGE_GROUP_SIZE = Integer.parseInt(properties.getProperty("STORAGE_GROUP_SIZE", "50"));
         config.MAX_ROLLUP = Integer.parseInt(properties.getProperty("MAX_ROLLUP", config.MAX_ROLLUP + ""));
         config.WRITE_THREAD_NUM = Integer.parseInt(properties.getProperty("WRITE_THREAD_NUM", config.WRITE_THREAD_NUM + ""));
+        config.RING_BUFFER_SIZE = Integer.parseInt(properties.getProperty("RING_BUFFER_SIZE", config.RING_BUFFER_SIZE + ""));
       } catch (IOException e) {
         LOGGER.error("load properties error: ", e);
       }

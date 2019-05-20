@@ -41,15 +41,8 @@ public class Main {
   private static HttpServer startServer() throws SQLException, ClassNotFoundException {
     initDB();
 
-//    int cores = Runtime.getRuntime().availableProcessors();
-//    if (config.WRITE_THREAD_NUM > 0) {
-//      cores = config.WRITE_THREAD_NUM;
-//    }
-//    ExecutorService executorService = Executors.newFixedThreadPool(cores);
     EventFactory<StringEvent> eventFactory = new StringEventFactory();
-    // Specify the size of the ring buffer, must be power of 2.
-    int ringBufferSize = 1024 * 1024;
-    disruptor = new Disruptor<>(eventFactory, ringBufferSize, DaemonThreadFactory.INSTANCE);
+    disruptor = new Disruptor<>(eventFactory, config.RING_BUFFER_SIZE, DaemonThreadFactory.INSTANCE);
     EventHandler<StringEvent> eventHandler = new StringEventHandler();
     disruptor.handleEventsWith(eventHandler);
     disruptor.start();

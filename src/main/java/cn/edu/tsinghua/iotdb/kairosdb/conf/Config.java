@@ -8,6 +8,7 @@ public class Config {
   public String REST_PORT = "6666";
   public int MAX_ROLLUP = 100;
   public int WRITE_THREAD_NUM = 0;
+  public int RING_BUFFER_SIZE = 1024;
 
   Config() {
 

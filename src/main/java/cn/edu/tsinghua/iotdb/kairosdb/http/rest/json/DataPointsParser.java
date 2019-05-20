@@ -30,7 +30,6 @@ public class DataPointsParser {
   private final Reader inputStream;
   private final Gson gson;
 
-  private int dataPointCount;
   // <hash(timestamp-path), <metric, value>>
   private Map<String, Map<String, String>> tableMap = new HashMap<>();
   // <path, type>
@@ -48,14 +47,7 @@ public class DataPointsParser {
     this.gson = gson;
   }
 
-  public int getDataPointCount() {
-    return dataPointCount;
-  }
-
-  public ValidationErrors parse() throws IOException {
-
-    //long start = System.currentTimeMillis();
-    ValidationErrors validationErrors = new ValidationErrors();
+  public void parse() throws IOException {
 
     try (JsonReader reader = new JsonReader(inputStream)) {
       int metricCount = 0;
@@ -65,34 +57,31 @@ public class DataPointsParser {
 
           while (reader.hasNext()) {
             NewMetric metric = parseMetric(reader);
-            validateAndAddDataPoints(metric, validationErrors, metricCount);
+            validateAndAddDataPoints(metric, metricCount);
             metricCount++;
           }
         } catch (EOFException e) {
-          validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
+          LOGGER.error("Invalid json. No content due to end of input.");
         }
 
         reader.endArray();
       } else if (reader.peek().equals(JsonToken.BEGIN_OBJECT)) {
         NewMetric metric = parseMetric(reader);
-        validateAndAddDataPoints(metric, validationErrors, 0);
+        validateAndAddDataPoints(metric, 0);
       } else {
-        validationErrors.addErrorMessage("Invalid start of json.");
+        LOGGER.error("Invalid start of json.");
       }
 
     } catch (EOFException e) {
-      validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
+      LOGGER.error("Invalid json. No content due to end of input.");
     }
-    //ingestTime = (int) (System.currentTimeMillis() - start);
-    //long id = System.currentTimeMillis();
-    //LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
 
-    //start = System.currentTimeMillis();
     try {
       sendMetricsData();
     } catch (SQLException e) {
       try {
         createTimeSeries();
+        seriesPaths.clear();
         sendMetricsData();
       } catch (SQLException ex) {
         try {
@@ -101,14 +90,10 @@ public class DataPointsParser {
           LOGGER.error("Exception occur:", exc);
         }
         LOGGER.error("Exception occur:", ex);
-        validationErrors.addErrorMessage(
-            String.format("%s: %s", ex.getClass().getName(), ex.getMessage()));
       }
     }
-    //long elapse = System.currentTimeMillis() - start;
-    //LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
+    tableMap.clear();
 
-    return validationErrors;
   }
 
   private static String createTimeSeriesSql(String seriesPath, String type) {
@@ -225,7 +210,7 @@ public class DataPointsParser {
     return validationErrors;
   }
 
-  private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) {
+  private void validateAndAddDataPoints(NewMetric metric, int count) {
     ValidationErrors validationErrors = new ValidationErrors();
     Context context = new Context(count);
 
@@ -344,16 +329,13 @@ public class DataPointsParser {
               validationErrors.addErrorMessage(context + " " + e.getMessage());
             }
 
-            dataPointCount++;
+
           }
           contextCount++;
         }
       }
     }
 
-    errors.add(validationErrors);
-
-    return !validationErrors.hasErrors();
   }
 
   private String findType(JsonElement value) throws ValidationException {
