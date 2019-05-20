@@ -145,9 +145,10 @@ public class DataPointsParser {
         valuePartBuilder.append(")");
         sqlBuilder.append(sqlPrefix).append(sensorPartBuilder).append(valuePartBuilder);
         //LOGGER.info("SQL: {}", sqlBuilder);
+        LOGGER.info("timestamp = {}", timestamp);
         statement.addBatch(sqlBuilder.toString());
       }
-      LOGGER.info("send SQLs to IoTDB, batch size: {}", tableMap.size());
+      //LOGGER.info("send SQLs to IoTDB, tableMap: {}", tableMap);
       statement.executeBatch();
       tableMap.clear();
     }
