@@ -81,7 +81,6 @@ public class DataPointsParser {
     } catch (SQLException e) {
       try {
         createTimeSeries();
-        seriesPaths.clear();
         sendMetricsData();
       } catch (SQLException ex) {
         try {
@@ -92,7 +91,6 @@ public class DataPointsParser {
         LOGGER.error("Exception occur:", ex);
       }
     }
-    tableMap.clear();
 
   }
 
@@ -124,6 +122,7 @@ public class DataPointsParser {
         statement.addBatch(createTimeSeriesSql(entry.getKey(), entry.getValue()));
       }
       statement.executeBatch();
+      seriesPaths.clear();
     }
   }
 
@@ -148,8 +147,9 @@ public class DataPointsParser {
         //LOGGER.info("SQL: {}", sqlBuilder);
         statement.addBatch(sqlBuilder.toString());
       }
-      //LOGGER.info("batch size: {}", tableMap.size());
+      LOGGER.info("send SQLs to IoTDB, batch size: {}", tableMap.size());
       statement.executeBatch();
+      tableMap.clear();
     }
   }
 
