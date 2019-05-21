@@ -155,6 +155,7 @@ public class WriteService {
               statement.close();
             } catch (Exception ex) {
               try {
+                createTimeSeries();
                 statement.executeBatch();
                 statement.clearBatch();
                 statement.close();
