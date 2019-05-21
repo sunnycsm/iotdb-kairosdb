@@ -43,7 +43,6 @@ public class DataPointsParser {
 
   public ValidationErrors parse() throws IOException {
 
-    long start = System.currentTimeMillis();
     ValidationErrors validationErrors = new ValidationErrors();
     try (JsonReader reader = new JsonReader(inputStream)) {
       int metricCount = 0;
@@ -71,18 +70,9 @@ public class DataPointsParser {
     } catch (EOFException e) {
       validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
     }
-    long ingestTime = (System.currentTimeMillis() - start);
-    long id = System.currentTimeMillis();
-    // 新metric 约6000ms
-    // 旧metric 约18ms
-    LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
 
-    start = System.currentTimeMillis();
     createTimeSeries();
     sendMetricsData();
-    long elapse = System.currentTimeMillis() - start;
-    // 旧metric 20ms ～ 400ms 不等
-    LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
 
     return validationErrors;
   }

@@ -98,28 +98,30 @@ public class WriteService {
 
 
 
-  private static String createTimeSeriesSql(String seriesPath, String type) {
-    String datatype;
-    String encoding;
-    switch (type) {
-      case "long":
-        datatype = "INT64";
-        encoding = INT64_ENCODING;
-        break;
-      case "double":
-        datatype = "DOUBLE";
-        encoding = DOUBLE_ENCODING;
-        break;
-      default:
-        datatype = "TEXT";
-        encoding = TEXT_ENCODING;
-    }
-    return String
-        .format("CREATE TIMESERIES %s WITH DATATYPE=%s, ENCODING=%s, COMPRESSOR=SNAPPY", seriesPath,
-            datatype, encoding);
-  }
+
 
   class StatBackLoop implements Runnable {
+
+    private String createTimeSeriesSql(String seriesPath, String type) {
+      String datatype;
+      String encoding;
+      switch (type) {
+        case "long":
+          datatype = "INT64";
+          encoding = INT64_ENCODING;
+          break;
+        case "double":
+          datatype = "DOUBLE";
+          encoding = DOUBLE_ENCODING;
+          break;
+        default:
+          datatype = "TEXT";
+          encoding = TEXT_ENCODING;
+      }
+      return String
+          .format("CREATE TIMESERIES %s WITH DATATYPE=%s, ENCODING=%s, COMPRESSOR=SNAPPY", seriesPath,
+              datatype, encoding);
+    }
 
     private void createTimeSeries() throws SQLException {
       try (Statement sqlStatement = IoTDBUtil.getConnection().createStatement()) {
