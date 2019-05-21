@@ -117,8 +117,6 @@ public class MetricsResource {
               new InputStreamReader(inputStream[0], StandardCharsets.UTF_8), gson);
           ValidationErrors validationErrors = parser.parse();
 
-          ingestedDataPoints.addAndGet(parser.getDataPointCount());
-
           if (!validationErrors.hasErrors()) {
             return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
           } else {

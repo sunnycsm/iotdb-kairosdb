@@ -30,7 +30,6 @@ public class DataPointsParser {
   private final Reader inputStream;
   private final Gson gson;
 
-  private int dataPointCount;
   // <hash(timestamp-path), <metric, value>>
   private Map<String, Map<String, String>> tableMap = new HashMap<>();
   // <path, type>
@@ -48,13 +47,9 @@ public class DataPointsParser {
     this.gson = gson;
   }
 
-  public int getDataPointCount() {
-    return dataPointCount;
-  }
-
   public ValidationErrors parse() throws IOException {
 
-    //long start = System.currentTimeMillis();
+    long start = System.currentTimeMillis();
     ValidationErrors validationErrors = new ValidationErrors();
     try (JsonReader reader = new JsonReader(inputStream)) {
       int metricCount = 0;
@@ -82,11 +77,11 @@ public class DataPointsParser {
     } catch (EOFException e) {
       validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
     }
-    //ingestTime = (int) (System.currentTimeMillis() - start);
-    //long id = System.currentTimeMillis();
-    //LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
+    long ingestTime =  (System.currentTimeMillis() - start);
+    long id = System.currentTimeMillis();
+    LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
 
-    //start = System.currentTimeMillis();
+    start = System.currentTimeMillis();
     try {
       sendMetricsData();
     } catch (SQLException e) {
@@ -104,8 +99,8 @@ public class DataPointsParser {
             String.format("%s: %s", ex.getClass().getName(), ex.getMessage()));
       }
     }
-    //long elapse = System.currentTimeMillis() - start;
-    //LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
+    long elapse = System.currentTimeMillis() - start;
+    LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
 
     return validationErrors;
   }
@@ -343,7 +338,6 @@ public class DataPointsParser {
               validationErrors.addErrorMessage(context + " " + e.getMessage());
             }
 
-            dataPointCount++;
           }
           contextCount++;
         }
