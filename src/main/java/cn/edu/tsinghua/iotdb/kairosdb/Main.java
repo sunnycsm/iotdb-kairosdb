@@ -4,6 +4,7 @@ import cn.edu.tsinghua.iotdb.kairosdb.conf.Config;
 import cn.edu.tsinghua.iotdb.kairosdb.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.kairosdb.dao.IoTDBUtil;
 import cn.edu.tsinghua.iotdb.kairosdb.dao.MetricsManager;
+import cn.edu.tsinghua.iotdb.kairosdb.dao.WriteService;
 import cn.edu.tsinghua.iotdb.kairosdb.util.AddressUtil;
 import java.net.URI;
 import java.sql.SQLException;
@@ -30,6 +31,7 @@ public class Main {
 
   private static HttpServer startServer() throws SQLException, ClassNotFoundException {
     initDB();
+    WriteService.getInstance().activate();
     final ResourceConfig rc = new ResourceConfig()
         .packages("cn.edu.tsinghua.iotdb.kairosdb.http.rest");
     return GrizzlyHttpServerFactory.createHttpServer(baseURI, rc);
@@ -69,6 +71,7 @@ public class Main {
       Thread.currentThread().interrupt();
     }
     server.shutdown();
+    WriteService.getInstance().stop();
     IoTDBUtil.closeConnection();
   }
 

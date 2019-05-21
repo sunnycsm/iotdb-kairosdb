@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.kairosdb.http.rest.json;
 
-import cn.edu.tsinghua.iotdb.kairosdb.dao.IoTDBUtil;
 import cn.edu.tsinghua.iotdb.kairosdb.dao.MetricsManager;
+import cn.edu.tsinghua.iotdb.kairosdb.dao.WriteService;
 import cn.edu.tsinghua.iotdb.kairosdb.util.Util;
 import cn.edu.tsinghua.iotdb.kairosdb.util.ValidationException;
 import cn.edu.tsinghua.iotdb.kairosdb.util.Validator;
@@ -16,7 +16,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -36,11 +35,6 @@ public class DataPointsParser {
   private Map<String, String> seriesPaths = new HashMap<>();
 
   private static final String TABLE_MAP_KEY_SPLIT = "%";
-
-  // The constants of encoding methods
-  private static final String TEXT_ENCODING = "PLAIN";
-  private static final String INT64_ENCODING = "TS_2DIFF";
-  private static final String DOUBLE_ENCODING = "GORILLA";
 
   public DataPointsParser(Reader stream, Gson gson) {
     this.inputStream = stream;
@@ -77,89 +71,47 @@ public class DataPointsParser {
     } catch (EOFException e) {
       validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
     }
-    long ingestTime =  (System.currentTimeMillis() - start);
+    long ingestTime = (System.currentTimeMillis() - start);
     long id = System.currentTimeMillis();
+    // 新metric 约6000ms
+    // 旧metric 约18ms
     LOGGER.info("请求id:{}, 解析整个写入请求的JSON时间: {} ms", id, ingestTime);
 
     start = System.currentTimeMillis();
-    try {
-      sendMetricsData();
-    } catch (SQLException e) {
-      try {
-        createTimeSeries();
-        sendMetricsData();
-      } catch (SQLException ex) {
-        try {
-          sendMetricsData();
-        } catch (SQLException exc) {
-          LOGGER.error("Exception occur:", exc);
-        }
-        LOGGER.error("Exception occur:", ex);
-        validationErrors.addErrorMessage(
-            String.format("%s: %s", ex.getClass().getName(), ex.getMessage()));
-      }
-    }
+    createTimeSeries();
+    sendMetricsData();
     long elapse = System.currentTimeMillis() - start;
+    // 旧metric 20ms ～ 400ms 不等
     LOGGER.info("请求id:{}, IoTDB JDBC 执行时间: {} ms", id, elapse);
 
     return validationErrors;
   }
 
-  private static String createTimeSeriesSql(String seriesPath, String type) {
-    String datatype;
-    String encoding;
-    switch (type) {
-      case "long":
-        datatype = "INT64";
-        encoding = INT64_ENCODING;
-        break;
-      case "double":
-        datatype = "DOUBLE";
-        encoding = DOUBLE_ENCODING;
-        break;
-      default:
-        datatype = "TEXT";
-        encoding = TEXT_ENCODING;
-    }
-    return String
-        .format("CREATE TIMESERIES %s WITH DATATYPE=%s, ENCODING=%s, COMPRESSOR=SNAPPY", seriesPath,
-            datatype, encoding);
+  private void createTimeSeries() {
+    WriteService.getInstance().addSeries(seriesPaths);
   }
 
-  public void createTimeSeries() throws SQLException {
-    try (Statement statement = IoTDBUtil.getConnection().createStatement()) {
-      for (Map.Entry<String, String> entry : seriesPaths.entrySet()) {
-        //LOGGER.info("TIMESERIES {} has been created, type: {}", entry.getKey(), entry.getValue());
-        statement.addBatch(createTimeSeriesSql(entry.getKey(), entry.getValue()));
-      }
-      statement.executeBatch();
-    }
-  }
+  private void sendMetricsData() {
 
-  public void sendMetricsData() throws SQLException {
-    try (Statement statement = IoTDBUtil.getConnection().createStatement()) {
-      for (Map.Entry<String, Map<String, String>> entry : tableMap.entrySet()) {
-        StringBuilder sqlBuilder = new StringBuilder();
-        StringBuilder sensorPartBuilder = new StringBuilder("(timestamp");
-        StringBuilder valuePartBuilder = new StringBuilder(" values(");
-        String timestamp = entry.getKey().split(TABLE_MAP_KEY_SPLIT)[0];
-        String path = entry.getKey().split(TABLE_MAP_KEY_SPLIT)[1];
-        String sqlPrefix = String
-            .format("insert into root.%s%s", MetricsManager.getStorageGroupName(path), path);
-        valuePartBuilder.append(timestamp);
-        for (Map.Entry<String, String> subEntry : entry.getValue().entrySet()) {
-          sensorPartBuilder.append(",").append(subEntry.getKey());
-          valuePartBuilder.append(",").append(subEntry.getValue());
-        }
-        sensorPartBuilder.append(")");
-        valuePartBuilder.append(")");
-        sqlBuilder.append(sqlPrefix).append(sensorPartBuilder).append(valuePartBuilder);
-        //LOGGER.info("SQL: {}", sqlBuilder);
-        statement.addBatch(sqlBuilder.toString());
+    for (Map.Entry<String, Map<String, String>> entry : tableMap.entrySet()) {
+      StringBuilder sqlBuilder = new StringBuilder();
+      StringBuilder sensorPartBuilder = new StringBuilder("(timestamp");
+      StringBuilder valuePartBuilder = new StringBuilder(" values(");
+      String timestamp = entry.getKey().split(TABLE_MAP_KEY_SPLIT)[0];
+      String path = entry.getKey().split(TABLE_MAP_KEY_SPLIT)[1];
+      String sqlPrefix = String
+          .format("insert into root.%s%s", MetricsManager.getStorageGroupName(path), path);
+      valuePartBuilder.append(timestamp);
+      for (Map.Entry<String, String> subEntry : entry.getValue().entrySet()) {
+        sensorPartBuilder.append(",").append(subEntry.getKey());
+        valuePartBuilder.append(",").append(subEntry.getValue());
       }
-      //LOGGER.info("batch size: {}", tableMap.size());
-      statement.executeBatch();
+      sensorPartBuilder.append(")");
+      valuePartBuilder.append(")");
+      sqlBuilder.append(sqlPrefix).append(sensorPartBuilder).append(valuePartBuilder);
+      WriteService.getInstance().addBatch(sqlBuilder.toString());
     }
+
   }
 
   private NewMetric parseMetric(JsonReader reader) {
