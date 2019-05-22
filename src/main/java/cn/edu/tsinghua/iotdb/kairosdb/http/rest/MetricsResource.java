@@ -172,15 +172,37 @@ public class MetricsResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
   @Path(QUERY_URL)
-  public Response getQuery(@QueryParam("query") String json) {
-    return runQuery(json);
+  public void getQuery(@QueryParam("query") String json, @Suspended final AsyncResponse asyncResponse) {
+    new Thread(new Runnable() {
+
+      @Override
+      public void run() {
+        asyncResponse.resume(veryExpensiveOperation());
+      }
+
+      private Response veryExpensiveOperation() {
+        return runQuery(json);
+      }
+
+    }).start();
   }
 
   @POST
   @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
   @Path(QUERY_URL)
-  public Response postQuery(String json) {
-    return runQuery(json);
+  public void postQuery(String json, @Suspended final AsyncResponse asyncResponse) {
+    new Thread(new Runnable() {
+
+      @Override
+      public void run() {
+        asyncResponse.resume(veryExpensiveOperation());
+      }
+
+      private Response veryExpensiveOperation() {
+        return runQuery(json);
+      }
+
+    }).start();
   }
 
   private Response runQuery(String jsonStr) {
